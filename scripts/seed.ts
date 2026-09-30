@@ -120,6 +120,14 @@ async function main() {
       grantedAt: consentGranted ? new Date() : null,
     });
 
+    // Grant AI processing consent for Ravi Kumar (i===0) and most others
+    const aiConsentGranted = i === 0 || (i % 4 !== 0);
+    await db.insert(schema.consentRecords).values({
+      userId: newUser.id, scope: "ai_processing",
+      granted: aiConsentGranted, policyVersion: "1.0",
+      grantedAt: aiConsentGranted ? new Date() : null,
+    });
+
     const periodStart = new Date();
     periodStart.setDate(periodStart.getDate() - 30);
     await db.insert(schema.dutyRecords).values({
