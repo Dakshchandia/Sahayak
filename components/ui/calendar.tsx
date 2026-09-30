@@ -1,50 +1,24 @@
 "use client"
 
 import * as React from "react"
-import { DayPicker } from "react-day-picker"
-import { cn } from "@/lib/utils"
 
-export type CalendarProps = React.ComponentProps<typeof DayPicker>
+// react-day-picker removed — SAHAYAK uses a custom calendar grid in
+// components/checkin-calendar.tsx. This stub keeps Shadcn imports happy.
 
-/**
- * Calendar component — wraps react-day-picker v8.
- * The SAHAYAK UI uses <input type="date"> for date entry; this component
- * is kept for Shadcn compatibility but is not used in core flows.
- */
-function Calendar({
-  className,
-  classNames,
-  showOutsideDays = true,
-  ...props
-}: CalendarProps) {
+export type CalendarProps = {
+  className?: string
+  selected?: Date
+  onSelect?: (date: Date | undefined) => void
+  mode?: string
+  showOutsideDays?: boolean
+  [key: string]: unknown
+}
+
+function Calendar({ className }: CalendarProps) {
   return (
-    <DayPicker
-      showOutsideDays={showOutsideDays}
-      className={cn("p-3", className)}
-      classNames={{
-        months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-        month: "space-y-4",
-        caption: "flex justify-center pt-1 relative items-center",
-        caption_label: "text-sm font-medium",
-        nav: "space-x-1 flex items-center",
-        nav_button: cn("h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"),
-        nav_button_previous: "absolute left-1",
-        nav_button_next: "absolute right-1",
-        table: "w-full border-collapse space-y-1",
-        head_row: "flex",
-        head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
-        row: "flex w-full mt-2",
-        cell: "h-9 w-9 text-center text-sm p-0 relative",
-        day: cn("h-9 w-9 p-0 font-normal aria-selected:opacity-100"),
-        day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground",
-        day_today: "bg-accent text-accent-foreground",
-        day_outside: "text-muted-foreground opacity-50",
-        day_disabled: "text-muted-foreground opacity-50",
-        day_hidden: "invisible",
-        ...classNames,
-      }}
-      {...props}
-    />
+    <div className={className}>
+      {/* Calendar stub — use CheckInCalendar for full calendar functionality */}
+    </div>
   )
 }
 Calendar.displayName = "Calendar"
