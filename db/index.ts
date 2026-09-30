@@ -64,15 +64,26 @@ export async function dbReady(): Promise<void> {
 async function createPostgres(url: string): Promise<AnyDb> {
   const postgres = (await import("postgres")).default;
   const { drizzle } = await import("drizzle-orm/postgres-js");
-  const client = postgres(url, {
-    max: 10,
+
+  // Strip unsupported params from the URL for the postgres driver
+  // (channel_binding is not supported by the postgres npm package)
+  const cleanUrl = url
+    .replace(/[&?]channel_binding=[^&]*/g, "")
+    .replace(/\?&/, "?")
+    .replace(/[?&]$/, "");
+
+  const isNeon = cleanUrl.includes("neon.tech");
+
+  const client = postgres(cleanUrl, {
+    max: 3,
     idle_timeout: 20,
     connect_timeout: 10,
     prepare: false,
-    ssl: url.includes("neon.tech") || url.includes("sslmode=require") ? "require" : false,
+    ssl: isNeon ? "require" : (cleanUrl.includes("sslmode=require") ? "require" : false),
   });
+
   await client`SELECT 1`;
-  console.info("[db] PostgreSQL:", url.replace(/:[^:@]*@/, ":***@"));
+  console.info("[db] PostgreSQL connected:", cleanUrl.replace(/:[^:@]*@/, ":***@").split("?")[0]);
   return drizzle(client, { schema }) as unknown as AnyDb;
 }
 
