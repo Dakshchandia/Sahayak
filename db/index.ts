@@ -1,8 +1,9 @@
 /**
- * Database connection — PostgreSQL (production) or PGlite (local dev).
+ * Database connection — PostgreSQL (production/Neon) or PGlite (local dev).
  *
- * Uses globalThis to share ONE instance across hot-reloads in Next.js dev.
- * On Vercel serverless, each cold start creates a fresh connection.
+ * Uses @neondatabase/serverless on Vercel (HTTP transport, works in serverless).
+ * Uses postgres npm package for local PostgreSQL dev.
+ * Falls back to PGlite for zero-install local development.
  */
 
 /* eslint-disable @typescript-eslint/no-require-imports */
@@ -22,13 +23,11 @@ declare global {
 export async function dbReady(): Promise<void> {
   if (globalThis.__sahayakDb) return;
 
-  // If there's already a pending promise, wait for it
   if (globalThis.__sahayakDbPromise) {
     try {
       await globalThis.__sahayakDbPromise;
       return;
     } catch {
-      // Previous attempt failed — clear it and retry
       globalThis.__sahayakDbPromise = undefined;
       globalThis.__sahayakDb = undefined;
     }
@@ -38,13 +37,16 @@ export async function dbReady(): Promise<void> {
     const url = process.env.DATABASE_URL ?? "";
 
     if (url && !url.startsWith("file:")) {
-      const db = await createPostgres(url);
-      return db;
+      // Use Neon serverless driver in production (Vercel)
+      // Use postgres npm package in local dev
+      if (process.env.NODE_ENV === "production" || url.includes("neon.tech")) {
+        return await createNeonServerless(url);
+      }
+      return await createPostgres(url);
     }
 
-    // No DATABASE_URL — use PGlite (local dev only)
     if (process.env.NODE_ENV === "production") {
-      throw new Error("[db] DATABASE_URL is not set. Cannot start in production without a database.");
+      throw new Error("[db] DATABASE_URL is not set in production.");
     }
     return createPglite();
   })();
@@ -54,15 +56,13 @@ export async function dbReady(): Promise<void> {
   try {
     globalThis.__sahayakDb = await promise;
   } catch (err) {
-    // Clear so next request retries
     globalThis.__sahayakDbPromise = undefined;
     globalThis.__sahayakDb = undefined;
     throw err;
   }
 }
 
-function cleanDatabaseUrl(url: string): string {
-  // Remove params unsupported by the postgres npm driver
+function cleanUrl(url: string): string {
   return url
     .replace(/[&?]channel_binding=[^&]*/g, "")
     .replace(/[&?]pgbouncer=[^&]*/g, "")
@@ -70,36 +70,62 @@ function cleanDatabaseUrl(url: string): string {
     .replace(/[?&]$/, "");
 }
 
+/**
+ * Neon serverless driver — uses HTTP fetch transport.
+ * Works in Vercel serverless functions (no TCP socket needed).
+ */
+async function createNeonServerless(url: string): Promise<AnyDb> {
+  const { neon } = await import("@neondatabase/serverless");
+  const { drizzle } = await import("drizzle-orm/neon-http");
+
+  const clean = cleanUrl(url);
+  console.info("[db] Neon serverless connecting...", clean.replace(/:[^:@]*@/, ":***@").split("?")[0]);
+
+  const sql = neon(clean);
+  const db = drizzle(sql, { schema });
+
+  // Test connection
+  try {
+    await sql`SELECT 1 as ok`;
+    console.info("[db] Neon serverless connected ✓");
+  } catch (err) {
+    throw new Error(`[db] Neon connection test failed: ${(err as Error).message}`);
+  }
+
+  return db as unknown as AnyDb;
+}
+
+/**
+ * Standard postgres npm driver — for local PostgreSQL dev.
+ */
 async function createPostgres(url: string): Promise<AnyDb> {
   const postgres = (await import("postgres")).default;
   const { drizzle } = await import("drizzle-orm/postgres-js");
 
-  const cleanUrl = cleanDatabaseUrl(url);
-  const isNeon = cleanUrl.includes("neon.tech");
+  const clean = cleanUrl(url);
+  console.info("[db] PostgreSQL connecting...", clean.replace(/:[^:@]*@/, ":***@").split("?")[0]);
 
-  console.info("[db] Connecting to PostgreSQL...", cleanUrl.replace(/:[^:@]*@/, ":***@").split("?")[0]);
-
-  const client = postgres(cleanUrl, {
+  const client = postgres(clean, {
     max: 3,
     idle_timeout: 30,
     connect_timeout: 15,
     prepare: false,
-    ssl: isNeon ? "require" : undefined,
-    onnotice: () => {}, // suppress notices
   });
 
-  // Test connection
   try {
     await client`SELECT 1 as ok`;
+    console.info("[db] PostgreSQL connected ✓");
   } catch (err) {
     await client.end({ timeout: 1 }).catch(() => {});
-    throw new Error(`[db] Connection test failed: ${(err as Error).message}`);
+    throw new Error(`[db] PostgreSQL connection failed: ${(err as Error).message}`);
   }
 
-  console.info("[db] PostgreSQL connected ✓");
   return drizzle(client, { schema }) as unknown as AnyDb;
 }
 
+/**
+ * PGlite — zero-install local dev only.
+ */
 async function createPglite(): Promise<AnyDb> {
   const { PGlite } = await import("@electric-sql/pglite");
   const { drizzle } = await import("drizzle-orm/pglite");
@@ -109,15 +135,13 @@ async function createPglite(): Promise<AnyDb> {
   const migrationsDir = nodePath.join(process.cwd(), "drizzle");
 
   console.info(`[db] PGlite → ${dataDir}`);
-
   const client = new PGlite(dataDir);
   await client.waitReady;
-
   const db = drizzle(client, { schema });
 
   try {
     await migrate(db, { migrationsFolder: migrationsDir });
-    console.info("[db] Migrations applied");
+    console.info("[db] PGlite migrations applied");
   } catch (err: unknown) {
     const msg = String((err as Error)?.message ?? "");
     if (!msg.includes("already exists") && !msg.includes("duplicate")) {
@@ -128,16 +152,12 @@ async function createPglite(): Promise<AnyDb> {
   return db as unknown as AnyDb;
 }
 
-/**
- * Transparent proxy — delegates every call to the resolved db instance.
- */
 export const db: AnyDb = new Proxy({} as AnyDb, {
   get(_t, prop: string | symbol) {
     const instance = globalThis.__sahayakDb;
     if (!instance) {
       throw new Error(
-        `[db] db.${String(prop)} called before dbReady() resolved. ` +
-        "Ensure 'await dbReady()' is called at the top of the route handler."
+        `[db] db.${String(prop)} called before dbReady(). Add 'await dbReady()' at the top of the route handler.`
       );
     }
     const val = (instance as unknown as Record<string | symbol, unknown>)[prop];

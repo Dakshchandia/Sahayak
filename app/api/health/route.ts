@@ -1,20 +1,26 @@
 import { NextResponse } from "next/server";
-import { db, dbReady } from "@/db";
-import { sql } from "drizzle-orm";
 
 export async function GET() {
-  await dbReady();
+  const results: Record<string, unknown> = {
+    timestamp: new Date().toISOString(),
+    env: {
+      NODE_ENV: process.env.NODE_ENV,
+      DATABASE_URL: process.env.DATABASE_URL
+        ? process.env.DATABASE_URL.replace(/:[^:@]*@/, ":***@").split("?")[0]
+        : "NOT SET",
+      SESSION_SECRET: process.env.SESSION_SECRET ? "SET" : "NOT SET",
+      GEMINI_API_KEY: process.env.GEMINI_API_KEY ? "SET" : "NOT SET",
+    },
+  };
+
   try {
-    await db.execute(sql`SELECT 1`);
-    return NextResponse.json({
-      status: "ok",
-      db: "connected",
-      timestamp: new Date().toISOString(),
-    });
-  } catch {
-    return NextResponse.json(
-      { status: "error", db: "unavailable" },
-      { status: 503 }
-    );
+    const { dbReady, db } = await import("@/db");
+    await dbReady();
+    const res = await (db as any).execute("SELECT 1 as ok");
+    results.database = { status: "connected", result: res };
+  } catch (err) {
+    results.database = { status: "error", message: (err as Error).message };
   }
+
+  return NextResponse.json(results);
 }

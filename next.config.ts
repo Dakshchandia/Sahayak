@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
   serverExternalPackages: [
     "bcryptjs",
     "postgres",
+    "@neondatabase/serverless",
     "nodemailer",
     "@electric-sql/pglite",
     "drizzle-orm",
