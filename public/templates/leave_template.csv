@@ -1,0 +1,4 @@
+personnel_id,leave_type,start_date,end_date,duration_days,approved
+S-1042,annual,2026-06-10,2026-06-17,7,true
+S-1043,medical,2026-07-01,2026-07-05,4,true
+S-1044,casual,2026-08-20,2026-08-21,1,true

@@ -1,0 +1,141 @@
+{
+  "app": {
+    "name": "SAHAYAK",
+    "tagline": "Personnel Wellbeing"
+  },
+  "nav": {
+    "overview": "Overview",
+    "cases": "Welfare cases",
+    "followups": "Follow-ups",
+    "privacy": "Privacy & access",
+    "problem": "Problem & approach",
+    "dashboard": "My dashboard",
+    "checkin": "Check-in",
+    "support": "Get support",
+    "admin": "Administration"
+  },
+  "roles": {
+    "personnel": "Personnel",
+    "welfare_officer": "Welfare Officer",
+    "commander": "Commander",
+    "admin": "Administrator"
+  },
+  "auth": {
+    "login": "Sign in",
+    "logout": "Sign out",
+    "email": "Email address",
+    "password": "Password",
+    "loginButton": "Sign in to SAHAYAK",
+    "loginError": "Invalid email or password.",
+    "rateLimited": "Too many login attempts. Please wait {minutes} minutes.",
+    "demoNotice": "Demo mode: use the credentials listed below",
+    "forgotPassword": "Forgot password?",
+    "changePassword": "Change password"
+  },
+  "checkin": {
+    "title": "Daily check-in",
+    "subtitle": "There are no right answers. Share what feels true today.",
+    "mood": "How are you feeling?",
+    "sleep": "How much did you sleep?",
+    "sleepQuality": "Sleep quality",
+    "fatigue": "How tired do you feel?",
+    "workload": "Perceived workload",
+    "concern": "Anything you'd like to note? (optional)",
+    "requestSupport": "I'd like to speak with a welfare officer",
+    "submit": "Save check-in",
+    "saved": "Your check-in has been saved.",
+    "consentRequired": "Enable wellness sharing in Privacy & access before submitting.",
+    "sharedWith": "Shared with your welfare officer only. Never shared with commanders or HR.",
+    "editPolicy": "You may edit today's check-in up to 11:59 PM. Earlier check-ins cannot be edited."
+  },
+  "priority": {
+    "routine": "Routine",
+    "watch": "Watch",
+    "elevated": "Elevated",
+    "disclaimer": "This is a welfare indicator, not a clinical assessment."
+  },
+  "caseStatus": {
+    "new": "New",
+    "reviewed": "Reviewed",
+    "contacted": "Contacted",
+    "intervention_agreed": "Intervention agreed",
+    "follow_up": "Follow-up",
+    "closed": "Closed",
+    "dismissed": "Dismissed"
+  },
+  "interventions": {
+    "welfare_conversation": "Confidential welfare conversation",
+    "counsellor_referral": "Counsellor referral",
+    "leave_review": "Leave review",
+    "duty_adjustment": "Duty adjustment proposal",
+    "recovery_planning": "Recovery planning",
+    "follow_up_conversation": "Follow-up conversation",
+    "no_action_needed": "No action needed"
+  },
+  "consent": {
+    "title": "Your data and consent",
+    "wellness": "Wellness check-ins",
+    "wellnessDesc": "Share mood, sleep and fatigue data for welfare review.",
+    "wearable": "Wearable / health device data",
+    "wearableDesc": "Link an approved wearable device. Not currently enabled.",
+    "aiProcessing": "AI-assisted explanations",
+    "aiProcessingDesc": "Allow anonymised factor data to be sent to an AI provider for plain-language summaries.",
+    "withdraw": "Withdraw consent",
+    "withdrawWarning": "Withdrawing wellness consent will remove your stored check-ins and wellness values from future assessments. Duty records and audit events are retained.",
+    "grant": "Enable",
+    "policyVersion": "Policy version",
+    "lastUpdated": "Last updated"
+  },
+  "support": {
+    "title": "Request confidential support",
+    "description": "Your request will appear in your welfare officer's queue. You do not need to share a reason.",
+    "preferredContact": "Preferred contact method",
+    "in_person": "In person",
+    "phone": "Phone",
+    "message": "Written message",
+    "availability": "When are you generally available? (optional)",
+    "submit": "Submit request",
+    "submitted": "Your support request has been submitted.",
+    "status": "Request status",
+    "acknowledged": "Acknowledged",
+    "pending": "Awaiting acknowledgement",
+    "urgentNote": "If you are in immediate danger, contact your emergency services (dial 112) or speak to a trusted colleague directly. This system does not dispatch emergency responders.",
+    "noScore": "You do not need a particular indicator score to request support."
+  },
+  "import": {
+    "title": "Import organizational records",
+    "selectType": "Record type",
+    "uploadCsv": "Upload CSV file",
+    "downloadTemplate": "Download template",
+    "preview": "Preview",
+    "commit": "Commit import",
+    "cancel": "Cancel",
+    "validRows": "{count} valid rows",
+    "errorRows": "{count} rows with errors",
+    "committed": "Import committed: {count} records added.",
+    "duplicatesSkipped": "{count} duplicate rows skipped.",
+    "types": {
+      "duty_schedule": "Duty schedules",
+      "deployment": "Deployments",
+      "leave": "Leave records",
+      "transfer": "Transfers",
+      "training": "Training"
+    }
+  },
+  "commander": {
+    "aggregateOnly": "Aggregate only — individual records excluded",
+    "suppressed": "Group too small to display (fewer than {min} personnel).",
+    "scenarioPlanner": "Workload scenario planner",
+    "scenarioDisclaimer": "Estimates only. Based on current duty records and stated rules. Does not predict mental-health outcomes or model staffing coverage. No real schedules are changed.",
+    "nightReduction": "Reduce night duties",
+    "hourReduction": "Reduce weekly hours",
+    "compare": "Compare scenario"
+  },
+  "errors": {
+    "unauthorized": "You do not have permission to view this page.",
+    "notFound": "Page not found.",
+    "serverError": "Something went wrong. Please try again.",
+    "csrfError": "Request could not be verified. Please reload and try again.",
+    "sessionExpired": "Your session has expired. Please sign in again."
+  }
+}

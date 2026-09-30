@@ -1,0 +1,34 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1790072438135,
+      "tag": "0000_flowery_silver_samurai",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790176818564,
+      "tag": "0001_spooky_thena",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790280000000,
+      "tag": "0002_workload_module",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790360000000,
+      "tag": "0003_checkin_journey",
+      "breakpoints": true
+    }
+  ]
+}

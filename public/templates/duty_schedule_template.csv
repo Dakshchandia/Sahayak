@@ -1,0 +1,4 @@
+personnel_id,period_start,period_end,weekly_hours,night_shifts,consecutive_days,rest_days
+S-1042,2026-08-01,2026-08-31,52,6,7,2
+S-1043,2026-08-01,2026-08-31,44,3,5,2
+S-1044,2026-08-01,2026-08-31,40,2,4,3

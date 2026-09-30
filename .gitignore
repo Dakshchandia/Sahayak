@@ -1,0 +1,48 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Next.js
+.next/
+out/
+dist/
+build/
+
+# Environment — never commit secrets
+.env
+.env.local
+.env.*.local
+
+# Drizzle generated migrations (keep the drizzle/ folder but not runtime state)
+.wrangler/
+
+# Cloudflare / Vinext (legacy — no longer used)
+.vinext/
+.openai/
+
+# Testing
+coverage/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/settings.json
+*.swp
+*.swo
+
+# Python ML service
+scripts/ml/__pycache__/
+scripts/ml/*.pyc
+scripts/ml/models/
+scripts/ml/data/synthetic_*.csv
+scripts/ml/.venv/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Local deployment notes (may contain secrets)
+VERCEL_ENV_SETUP.txt
+docs/VERCEL_DEPLOYMENT_FIX.md
