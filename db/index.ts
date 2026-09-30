@@ -38,6 +38,12 @@ export async function dbReady(): Promise<void> {
       try {
         return await createPostgres(url);
       } catch (err) {
+        // On Vercel/production, do NOT fall back to PGlite — fail fast with a clear error
+        if (process.env.NODE_ENV === "production") {
+          throw new Error(
+            `[db] PostgreSQL connection failed in production. Check DATABASE_URL env var.\nReason: ${(err as Error).message}`
+          );
+        }
         console.warn(
           "[db] PostgreSQL unreachable — using PGlite (local file db).\n" +
           "     Run 'docker compose up db' for a PostgreSQL server.\n" +
@@ -59,7 +65,11 @@ async function createPostgres(url: string): Promise<AnyDb> {
   const postgres = (await import("postgres")).default;
   const { drizzle } = await import("drizzle-orm/postgres-js");
   const client = postgres(url, {
-    max: 10, idle_timeout: 20, connect_timeout: 5, prepare: false,
+    max: 10,
+    idle_timeout: 20,
+    connect_timeout: 10,
+    prepare: false,
+    ssl: url.includes("neon.tech") || url.includes("sslmode=require") ? "require" : false,
   });
   await client`SELECT 1`;
   console.info("[db] PostgreSQL:", url.replace(/:[^:@]*@/, ":***@"));
