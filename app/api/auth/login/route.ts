@@ -15,7 +15,15 @@ const loginSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  await dbReady();
+  try {
+    await dbReady();
+  } catch (err) {
+    console.error("[login] Database unavailable:", err);
+    return NextResponse.json(
+      { error: "Service temporarily unavailable. Please try again in a moment." },
+      { status: 503 }
+    );
+  }
   const ip = getClientIp(request);
 
   let body: unknown;

@@ -1,22 +1,17 @@
 /**
- * Database connection — PGlite (local, zero-install) or PostgreSQL.
+ * Database connection — PostgreSQL (production) or PGlite (local dev).
  *
- * Uses Node.js globalThis to share ONE PGlite instance across all
- * hot-reloaded route modules in Next.js dev mode. Without this, each
- * route worker would open a separate PGlite instance on the same file,
- * causing lock conflicts and repeated slow initializations.
+ * Uses globalThis to share ONE instance across hot-reloads in Next.js dev.
+ * On Vercel serverless, each cold start creates a fresh connection.
  */
 
 /* eslint-disable @typescript-eslint/no-require-imports */
-// Use require() for Node built-ins — prevents Next.js webpack from
-// substituting browser shims that break path.join() with URL objects.
 const nodePath: typeof import("path") = require("path");
 
 import * as schema from "./schema";
 
 type AnyDb = ReturnType<typeof import("drizzle-orm/pglite").drizzle<typeof schema>>;
 
-// Shared across hot-reloads via globalThis
 declare global {
   // eslint-disable-next-line no-var
   var __sahayakDb: AnyDb | undefined;
@@ -26,64 +21,82 @@ declare global {
 
 export async function dbReady(): Promise<void> {
   if (globalThis.__sahayakDb) return;
+
+  // If there's already a pending promise, wait for it
   if (globalThis.__sahayakDbPromise) {
-    await globalThis.__sahayakDbPromise;
-    return;
+    try {
+      await globalThis.__sahayakDbPromise;
+      return;
+    } catch {
+      // Previous attempt failed — clear it and retry
+      globalThis.__sahayakDbPromise = undefined;
+      globalThis.__sahayakDb = undefined;
+    }
   }
 
-  globalThis.__sahayakDbPromise = (async (): Promise<AnyDb> => {
+  const promise = (async (): Promise<AnyDb> => {
     const url = process.env.DATABASE_URL ?? "";
 
     if (url && !url.startsWith("file:")) {
-      try {
-        return await createPostgres(url);
-      } catch (err) {
-        // On Vercel/production, do NOT fall back to PGlite — fail fast with a clear error
-        if (process.env.NODE_ENV === "production") {
-          throw new Error(
-            `[db] PostgreSQL connection failed in production. Check DATABASE_URL env var.\nReason: ${(err as Error).message}`
-          );
-        }
-        console.warn(
-          "[db] PostgreSQL unreachable — using PGlite (local file db).\n" +
-          "     Run 'docker compose up db' for a PostgreSQL server.\n" +
-          `     Reason: ${(err as Error).message}`
-        );
-      }
+      const db = await createPostgres(url);
+      return db;
     }
 
+    // No DATABASE_URL — use PGlite (local dev only)
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("[db] DATABASE_URL is not set. Cannot start in production without a database.");
+    }
     return createPglite();
-  })().then((db) => {
-    globalThis.__sahayakDb = db;
-    return db;
-  });
+  })();
 
-  await globalThis.__sahayakDbPromise;
+  globalThis.__sahayakDbPromise = promise;
+
+  try {
+    globalThis.__sahayakDb = await promise;
+  } catch (err) {
+    // Clear so next request retries
+    globalThis.__sahayakDbPromise = undefined;
+    globalThis.__sahayakDb = undefined;
+    throw err;
+  }
+}
+
+function cleanDatabaseUrl(url: string): string {
+  // Remove params unsupported by the postgres npm driver
+  return url
+    .replace(/[&?]channel_binding=[^&]*/g, "")
+    .replace(/[&?]pgbouncer=[^&]*/g, "")
+    .replace(/\?&/, "?")
+    .replace(/[?&]$/, "");
 }
 
 async function createPostgres(url: string): Promise<AnyDb> {
   const postgres = (await import("postgres")).default;
   const { drizzle } = await import("drizzle-orm/postgres-js");
 
-  // Strip unsupported params from the URL for the postgres driver
-  // (channel_binding is not supported by the postgres npm package)
-  const cleanUrl = url
-    .replace(/[&?]channel_binding=[^&]*/g, "")
-    .replace(/\?&/, "?")
-    .replace(/[?&]$/, "");
-
+  const cleanUrl = cleanDatabaseUrl(url);
   const isNeon = cleanUrl.includes("neon.tech");
+
+  console.info("[db] Connecting to PostgreSQL...", cleanUrl.replace(/:[^:@]*@/, ":***@").split("?")[0]);
 
   const client = postgres(cleanUrl, {
     max: 3,
-    idle_timeout: 20,
-    connect_timeout: 10,
+    idle_timeout: 30,
+    connect_timeout: 15,
     prepare: false,
-    ssl: isNeon ? "require" : (cleanUrl.includes("sslmode=require") ? "require" : false),
+    ssl: isNeon ? "require" : undefined,
+    onnotice: () => {}, // suppress notices
   });
 
-  await client`SELECT 1`;
-  console.info("[db] PostgreSQL connected:", cleanUrl.replace(/:[^:@]*@/, ":***@").split("?")[0]);
+  // Test connection
+  try {
+    await client`SELECT 1 as ok`;
+  } catch (err) {
+    await client.end({ timeout: 1 }).catch(() => {});
+    throw new Error(`[db] Connection test failed: ${(err as Error).message}`);
+  }
+
+  console.info("[db] PostgreSQL connected ✓");
   return drizzle(client, { schema }) as unknown as AnyDb;
 }
 
@@ -105,8 +118,8 @@ async function createPglite(): Promise<AnyDb> {
   try {
     await migrate(db, { migrationsFolder: migrationsDir });
     console.info("[db] Migrations applied");
-  } catch (err: any) {
-    const msg = String(err?.message ?? "");
+  } catch (err: unknown) {
+    const msg = String((err as Error)?.message ?? "");
     if (!msg.includes("already exists") && !msg.includes("duplicate")) {
       console.error("[db] Migration error:", msg);
     }
@@ -116,8 +129,7 @@ async function createPglite(): Promise<AnyDb> {
 }
 
 /**
- * Transparent proxy — every call delegates to the resolved instance.
- * Throws a clear error if used before dbReady().
+ * Transparent proxy — delegates every call to the resolved db instance.
  */
 export const db: AnyDb = new Proxy({} as AnyDb, {
   get(_t, prop: string | symbol) {
@@ -125,7 +137,7 @@ export const db: AnyDb = new Proxy({} as AnyDb, {
     if (!instance) {
       throw new Error(
         `[db] db.${String(prop)} called before dbReady() resolved. ` +
-        "Add 'await dbReady()' at the top of the route handler."
+        "Ensure 'await dbReady()' is called at the top of the route handler."
       );
     }
     const val = (instance as unknown as Record<string | symbol, unknown>)[prop];
@@ -133,7 +145,6 @@ export const db: AnyDb = new Proxy({} as AnyDb, {
   },
 });
 
-/** For scripts/seed.ts */
 export async function initDb(): Promise<AnyDb> {
   await dbReady();
   return globalThis.__sahayakDb!;
