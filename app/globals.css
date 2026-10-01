@@ -124,3 +124,23 @@ body{font-family:Arial,Helvetica,sans-serif;font-size:16px;color:var(--foregroun
 @media(max-width:767px){
   .cal-two-col{grid-template-columns:1fr!important}
 }
+.welcome-screen { font-family: 'Manrope', sans-serif; }
+.welcome-orb { mix-blend-mode: screen; pointer-events: none; }
+.welcome-orb-one { animation: float-1 20s ease-in-out infinite alternate; }
+.welcome-orb-two { animation: float-2 25s ease-in-out infinite alternate; }
+@keyframes float-1 { 0% { transform: translate(0, 0) scale(1); opacity: 0.15; } 100% { transform: translate(100px, 100px) scale(1.5); opacity: 0.25; } }
+@keyframes float-2 { 0% { transform: translate(0, 0) scale(1); opacity: 0.1; } 100% { transform: translate(-150px, -50px) scale(1.2); opacity: 0.2; } }
+.welcome-ekg { filter: drop-shadow(0 0 8px rgba(32, 213, 208, 0.4)); opacity: 0.8; }
+.welcome-ekg-path { stroke-dasharray: 2000; stroke-dashoffset: 2000; animation: dash 6s linear infinite; }
+@keyframes dash { 0% { stroke-dashoffset: 2000; } 50% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -2000; } }
+.welcome-hex-ring { border: 1px solid rgba(32, 213, 208, 0.2); border-radius: 50%; opacity: 0.5; }
+.welcome-hex-ring-2 { border: 1px dashed rgba(32, 213, 208, 0.3); animation: spin-slow 30s linear infinite; }
+.welcome-pulse-ring { animation: pulse-ring 4s cubic-bezier(0.215, 0.61, 0.355, 1) infinite; }
+@keyframes pulse-ring { 0% { transform: scale(0.95); opacity: 0.5; } 70% { transform: scale(1.4); opacity: 0; } 100% { transform: scale(0.95); opacity: 0; } }
+@keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.welcome-title-inner { background: linear-gradient(to right, #ffffff, #88bcc2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.welcome-cursor { display: inline-block; width: 4px; height: 1em; background: #20d5d0; margin-left: 8px; vertical-align: bottom; animation: blink 1s step-end infinite; box-shadow: 0 0 10px rgba(32,213,208,0.5); }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+.welcome-chip { display: inline-flex; items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; background: rgba(32, 213, 208, 0.08); border: 1px solid rgba(32, 213, 208, 0.2); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #20d5d0; }
+.welcome-progress { animation: progress-load 2.5s ease-out forwards; }
+@keyframes progress-load { 0% { width: 0%; } 100% { width: 100%; } }
