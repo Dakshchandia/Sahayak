@@ -12,7 +12,7 @@ const BASE_INPUT: RuleInput = {
   deploymentDays: 10,
   daysSinceLeave: 30,
   transfersLast6Months: 0,
-  trainingDays: 5,
+  trainingDaysLast30: 5,
   sleepHours: null,
   fatigue: null,
   mood: null,
@@ -173,7 +173,7 @@ describe("calculateAssessment — boundary conditions", () => {
     const result = calculateAssessment({
       ...BASE_INPUT,
       weeklyHours: 0, nightShifts: 0, consecutiveDays: 0,
-      deploymentDays: 0, daysSinceLeave: 0, transfersLast6Months: 0, trainingDays: 0,
+      deploymentDays: 0, daysSinceLeave: 0, transfersLast6Months: 0, trainingDaysLast30: 0,
     });
     expect(result.rawScore).toBe(0);
     expect(result.priority).toBe("routine");
@@ -183,7 +183,7 @@ describe("calculateAssessment — boundary conditions", () => {
     const result = calculateAssessment({
       weeklyHours: 168, nightShifts: 31, consecutiveDays: 30,
       deploymentDays: 365, daysSinceLeave: 730,
-      transfersLast6Months: 10, trainingDays: 30,
+      transfersLast6Months: 10, trainingDaysLast30: 30,
       sleepHours: 0, fatigue: 10, mood: 1, perceivedWorkload: 10,
       hasActiveSupport: true,
     });
