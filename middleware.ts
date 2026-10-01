@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 const PUBLIC_PATHS = [
+  "/",
+  "/cover",
   "/login",
   "/api/auth/login",
   "/api/auth/logout",
@@ -23,7 +25,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Check session cookie — full validation happens server-side in each route
+  // Check session cookie â€” full validation happens server-side in each route
   const sessionCookie = request.cookies.get("sahayak_session");
   if (!sessionCookie) {
     const loginUrl = new URL("/login", request.url);
